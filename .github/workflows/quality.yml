@@ -6,6 +6,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read          # checkout
+  security-events: write  # required by upload-sarif
+  actions: read           # required by upload-sarif on private repos
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -38,3 +43,12 @@ jobs:
         with:
           name: pit-report
           path: target/pit-reports/
+
+      - name: Run SpotBugs static analysis
+        run: ./mvnw compile spotbugs:spotbugs
+
+      - name: Upload SpotBugs SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: target/spotbugsSarif.json
+          category: spotbugs
