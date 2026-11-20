@@ -189,4 +189,147 @@ class CreatureTest {
         };
         return messages;
     }
+
+    // ---------------------------------------------------------------
+    // attackValue() / defenseValue(): base stats plus weapon and armor
+    // The creature from setUp has base attack 10 and defense 5.
+    // ---------------------------------------------------------------
+
+    private static Item gear(String name, int attack, int defense) {
+        Item item = new Item(')', Color.WHITE, name, null);
+        item.modifyAttackValue(attack);
+        item.modifyDefenseValue(defense);
+        return item;
+    }
+
+    /** Same stats as StuffFactory.newStaff(): attack >= defense, so equip() wields it as a weapon. */
+    private static Item staff() {
+        return gear("staff", 5, 3);
+    }
+
+    /** Armor with a small attack bonus: attack < defense, so equip() wears it as armor. */
+    private static Item spikedArmor() {
+        return gear("spiked armor", 1, 4);
+    }
+
+    @Test
+    void attackAndDefenseAreBaseStatsWhenNothingIsEquipped() {
+        assertNull(creature.weapon());
+        assertNull(creature.armor());
+
+        assertEquals(10, creature.attackValue());
+        assertEquals(5, creature.defenseValue());
+    }
+
+    @Test
+    void modifyingBaseStatsChangesAttackAndDefense() {
+        // Same changes a potion of warrior makes when it starts and ends.
+        creature.modifyAttackValue(5);
+        creature.modifyDefenseValue(5);
+        assertEquals(15, creature.attackValue());
+        assertEquals(10, creature.defenseValue());
+
+        creature.modifyAttackValue(-5);
+        creature.modifyDefenseValue(-5);
+        assertEquals(10, creature.attackValue());
+        assertEquals(5, creature.defenseValue());
+    }
+
+    @Test
+    void equippedWeaponAddsItsAttackAndDefenseBonuses() {
+        attachRecordingAiAndAddToWorld();
+        Item staff = staff();
+
+        creature.equip(staff);
+
+        assertSame(staff, creature.weapon());
+        assertNull(creature.armor());
+        assertEquals(10 + 5, creature.attackValue());
+        assertEquals(5 + 3, creature.defenseValue());
+    }
+
+    @Test
+    void equippedArmorAddsItsAttackAndDefenseBonuses() {
+        attachRecordingAiAndAddToWorld();
+        Item armor = spikedArmor();
+
+        creature.equip(armor);
+
+        assertNull(creature.weapon());
+        assertSame(armor, creature.armor());
+        assertEquals(10 + 1, creature.attackValue());
+        assertEquals(5 + 4, creature.defenseValue());
+    }
+
+    @Test
+    void weaponAndArmorBonusesStackWithBaseStats() {
+        attachRecordingAiAndAddToWorld();
+
+        creature.equip(staff());
+        creature.equip(spikedArmor());
+
+        assertEquals(10 + 5 + 1, creature.attackValue());
+        assertEquals(5 + 3 + 4, creature.defenseValue());
+    }
+
+    @Test
+    void unequippingRemovesTheBonuses() {
+        attachRecordingAiAndAddToWorld();
+        Item staff = staff();
+        Item armor = spikedArmor();
+        creature.equip(staff);
+        creature.equip(armor);
+
+        creature.unequip(staff);
+        creature.unequip(armor);
+
+        assertNull(creature.weapon());
+        assertNull(creature.armor());
+        assertEquals(10, creature.attackValue());
+        assertEquals(5, creature.defenseValue());
+    }
+
+    // ---------------------------------------------------------------
+    // modifyMana(): mana stays between 0 and maxMana
+    // A new creature has maxMana 5 and starts with full mana.
+    // ---------------------------------------------------------------
+
+    @Test
+    void newCreatureStartsWithFullMana() {
+        assertEquals(5, creature.maxMana());
+        assertEquals(5, creature.mana());
+    }
+
+    @ParameterizedTest(name = "mana {0} + ({1}) -> {2}")
+    @CsvSource({
+        "5, -1, 4",  // spend some
+        "5, -5, 0",  // spend exactly all of it
+        "5, -6, 0",  // overspending stops at 0
+        "5,  0, 5",  // no change
+        "5,  1, 5",  // already full: cannot go above maxMana
+        "2,  2, 4",  // restore some
+        "2,  3, 5",  // restore exactly to maxMana
+        "2,  4, 5",  // over-restoring stops at maxMana
+        "0, -1, 0",  // already empty stays at 0
+        "0,  1, 1"   // restore from empty
+    })
+    void modifyManaStaysBetweenZeroAndMaxMana(int startingMana, int amount, int expectedMana) {
+        creature.modifyMana(startingMana - creature.mana());
+        assertEquals(startingMana, creature.mana(), "setup: starting mana");
+
+        creature.modifyMana(amount);
+
+        assertEquals(expectedMana, creature.mana());
+    }
+
+    @Test
+    void manaCapFollowsMaxMana() {
+        creature.modifyMaxMana(5);  // maxMana 5 -> 10, mana still 5
+
+        creature.modifyMana(3);
+        assertEquals(8, creature.mana());
+
+        creature.modifyMana(10);
+        assertEquals(10, creature.mana());
+    }
 }
