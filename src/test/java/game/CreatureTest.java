@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class CreatureTest {
 
@@ -85,5 +87,27 @@ class CreatureTest {
 
         assertEquals(100, creature.hp());
         assertEquals(creature.maxHp(), creature.hp());
+    }
+
+    @ParameterizedTest(name = "modifyHp({0}) after death")
+    @ValueSource(ints = { -1, 15 })  // another hit; a thrown health potion's +15 after the kill
+    void modifyHpAfterDeathHasNoEffect(int amountAfterDeath) {
+        attachRecordingAiAndAddToWorld();
+        creature.modifyHp(-130, "first lethal hit");  // overkill: hp = -30
+
+        creature.modifyHp(amountAfterDeath, "after death");
+
+        assertEquals(1, itemsInWorld(), "exactly one corpse should be left");
+        assertEquals(-30, creature.hp(), "hp should not change after death");
+        assertEquals("first lethal hit", creature.causeOfDeath());
+    }
+
+    private int itemsInWorld() {
+        int count = 0;
+        for (int x = 0; x < world.width(); x++)
+            for (int y = 0; y < world.height(); y++)
+                if (world.item(x, y, 0) != null)
+                    count++;
+        return count;
     }
 }

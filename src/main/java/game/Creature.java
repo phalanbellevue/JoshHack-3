@@ -189,7 +189,7 @@ public class Creature {
 		
 		other.modifyHp(-amount, "Killed by a " + name);
 		
-		if (other.hp < 1)
+		if (CombatRules.isDead(other.hp))
 			gainXp(other);
 	}
 	
@@ -203,7 +203,10 @@ public class Creature {
 			modifyXp(amount);
 	}
 
-	public void modifyHp(int amount, String causeOfDeath) { 
+	public void modifyHp(int amount, String causeOfDeath) {
+		if (CombatRules.isDead(hp))
+			return;
+
 		hp = CombatRules.calculateNewHp(hp, maxHp, amount);
 		this.causeOfDeath = causeOfDeath;
 		
