@@ -274,4 +274,29 @@ class InventoryTest {
             assertFalse(inv.contains(c));
         }
     }
+
+    @Nested
+    @DisplayName("getItems")
+    class GetItemsTests {
+
+        @Test
+        @DisplayName("returns a copy: changing the returned array does not change the inventory")
+        void changingReturnedArrayDoesNotChangeInventory() {
+            Inventory inv = new Inventory(3);
+            inv.add(a);
+            inv.add(b);
+
+            Item[] returned = inv.getItems();
+            assertArrayEquals(new Item[] { a, b, null }, returned);
+
+            returned[0] = null;  // try to remove a without calling remove()
+            returned[2] = c;     // try to add c without calling add()
+
+            assertSame(a, inv.get(0));
+            assertSame(b, inv.get(1));
+            assertNull(inv.get(2));
+            assertFalse(inv.contains(c));
+            assertArrayEquals(new Item[] { a, b, null }, inv.getItems());
+        }
+    }
 }
