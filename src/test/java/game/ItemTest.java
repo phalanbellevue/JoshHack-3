@@ -66,4 +66,28 @@ class ItemTest {
         // Assert
         assertEquals("", actualDetails);
     }
+
+    @Test
+    void appearanceIsKeptWhenGiven() {
+        // Arrange: the item created in setUp has the appearance
+        // "mysterious test item".
+
+        // Act
+        String actualAppearance = item.appearance();
+
+        // Assert
+        assertEquals("mysterious test item", actualAppearance);
+    }
+
+    @Test
+    void appearanceDefaultsToNameWhenNull() {
+        // Arrange: corpses are created this way in Creature.leaveCorpse().
+        Item corpse = new Item('%', Color.RED, "josh corpse", null);
+
+        // Act
+        String actualAppearance = corpse.appearance();
+
+        // Assert
+        assertEquals("josh corpse", actualAppearance);
+    }
 }
