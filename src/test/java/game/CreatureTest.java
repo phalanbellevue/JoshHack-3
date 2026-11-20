@@ -332,4 +332,21 @@ class CreatureTest {
         creature.modifyMana(10);
         assertEquals(10, creature.mana());
     }
+
+    @Test
+    void wieldingANewWeaponPutsAwayTheOldOne() {
+        List<String> messages = attachRecordingAiAndAddToWorld();
+        Item dagger = gear("dagger", 5, 0);  // same attack as StuffFactory.newDagger()
+        Item sword = gear("sword", 10, 0);   // same attack as StuffFactory.newSword()
+        creature.equip(dagger);
+
+        creature.equip(sword);
+
+        assertSame(sword, creature.weapon());
+        assertTrue(creature.inventory().contains(dagger), "the old weapon should stay in the inventory");
+        assertEquals(10 + 10, creature.attackValue());
+        assertEquals(
+            List.of("You wield a dagger.", "You put away a dagger.", "You wield a sword."),
+            messages);
+    }
 }
